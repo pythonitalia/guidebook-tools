@@ -5,6 +5,10 @@ from icalendar import Calendar, Event
 
 def convert(fn):
 	out = csv.writer(sys.stdout)
+	out.writerow([
+		"Session Title","Date","Time Start","Time End",
+		"Room/Location","Schedule Track (Optional)","Description (Optional)",
+	])
 	cal = Calendar.from_ical(open(fn,'rb').read())
 	for event in cal.walk():
 		if isinstance(event, Event):
