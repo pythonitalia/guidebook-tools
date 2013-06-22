@@ -15,21 +15,51 @@ def convert(fn):
         "Session Title","Date","Time Start","Time End",
         "Room/Location","Schedule Track (Optional)","Description (Optional)",
     ])
+
+    helpdesks = {}
+
     cal = Calendar.from_ical(open(fn,'rb').read())
     for event in cal.walk():
         if isinstance(event, Event):
             start = event.decoded("DTSTART") + LOCAL_TIMEZONE
             end = event.decoded("DTEND") + LOCAL_TIMEZONE
+            title = event.decoded("SUMMARY")
+            track = event.decoded("LOCATION")
+            abstract = event.decoded("DESCRIPTION")
+
+            if "desk" in track.lower():
+                if (title, start.date()) in helpdesks:
+                    s1, e1, _ = helpdesks[(title, start.date())]
+                    date = start.date()
+                    start = min(s1, start.time())
+                    end = max(e1, end.time())
+                else:
+                    date = start.date()
+                    start = start.time()
+                    end = end.time()
+                helpdesks[(title, date)] = start, end, abstract
+                continue
 
             out.writerow([
-                event.decoded("SUMMARY"),
+                title,
                 start.date(),
                 start.time(),
                 end.time(),
                 "",
-                event.decoded("LOCATION"),
-                event.decoded("DESCRIPTION"),
+                track,
+                abstract,
             ])
+
+    for (title,date),(start,end,abstract) in helpdesks.items():
+        out.writerow([
+            title,
+            date,
+            start,
+            end,
+            "",
+            "Track: Help Desk",
+            abstract,
+        ])
 
 
 if __name__ == "__main__":
